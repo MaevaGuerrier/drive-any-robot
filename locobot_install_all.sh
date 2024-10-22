@@ -293,7 +293,7 @@ fi
 cd $LOCOBOT_FOLDER
 rosdep update
 rosdep update --include-eol-distros
-rosdep install --from-paths src/pyrobot -i -r -y --rosdistro=${ROS_DISTRO} --os=ubuntu:bionic
+rosdep install --from-paths src/pyrobot -i -r -y --rosdistro=${ROS_DISTRO} --os=ubuntu:xenial
 cd $LOCOBOT_FOLDER/src/pyrobot/robots/LoCoBot/install
 chmod +x install_orb_slam2.sh
 source install_orb_slam2.sh

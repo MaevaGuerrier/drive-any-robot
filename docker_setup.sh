@@ -32,7 +32,7 @@ function prepare()
 
 function BUILD_IMAGE() {
     Docker_file=.devcontainer/Dockerfile
-    image_tag=limo_ros2:dev
+    image_tag=gnm_ros:dev
     if [ $# -gt 2 ]
     then
         Docker_file=$1
@@ -41,13 +41,13 @@ function BUILD_IMAGE() {
     then
         Docker_file=$1
     fi
-    docker build --file $Docker_file --tag image_tag ..
+    docker build --file $Docker_file --tag ${image_tag} ..
 }
 
 function start_image()
 {
 
-    image_tag=limo_ros2:dev
+    image_tag=gnm_ros:dev
     if [ $# -gt 1 ] 
     then
         image_tag=$1
@@ -61,7 +61,25 @@ function start_image()
     # xauth nlist $DISPLAY | sed -e 's/^..../ffff/' | xauth -f $XAUTH nmerge -
     # chmod 777 $XAUTH
     
-    docker run --network=host -d -v /dev:/dev --privileged --device-cgroup-rule="a *:* rmw" --volume=/tmp/.X11-unix:/tmp/.X11-unix -v ${XAUTH}:${XAUTH} -e XAUTHORITY=${XAUTH} --runtime nvidia --gpus=all -v ${PWD}:/workspace -w=/workspace --name limo_dev -e LIBGL_ALWAYS_SOFTWARE="1" -e DISPLAY=${DISPLAY} --restart=always image_tag ./setup.sh
+    docker run --network=host \
+                -d \
+                -v /dev:/dev \
+                --privileged \
+                --device-cgroup-rule="a *:* rmw" \
+                --volume=/tmp/.X11-unix:/tmp/.X11-unix -v ${XAUTH}:${XAUTH} \
+                -e XAUTHORITY=${XAUTH} \
+                --runtime nvidia --gpus=all \
+                -v ${PWD}:/workspace \
+                -w=/workspace \
+                --name gnm_dev \
+                -e LIBGL_ALWAYS_SOFTWARE="1"\
+                -e DISPLAY=${DISPLAY} \
+                --restart=always ${image_tag}  \
+                ./setup.sh
+    
+    
+    
+    
     echo -e "${_GREEN} Container start success!${_NORMAL}"
     echo -e "${_GREEN} Now you can now connect to the container by running command 7 ${_NORMAL}"
 
@@ -69,17 +87,17 @@ function start_image()
 
 function attach_terminal()
 {
-    docker exec -it limo_dev /bin/bash
+    docker exec -it gnm_dev /bin/bash
 }
 
 function backup_container()
 {
-    docker commit limo_dev limo_dev:backup | (echo -e "${_RED} A backup is already exist. Use 'docker rmi limo_dev:backup' and try again.${_NORMAL}" && exit 1)
+    docker commit gnm_dev gnm_dev:backup | (echo -e "${_RED} A backup is already exist. Use 'docker rmi gnm_dev:backup' and try again.${_NORMAL}" && exit 1)
     echo -e "${_GREEN} Do you want to save the image locally (save as a .tar file)? (Y/N):${_NORMAL}"
     read input
     case $input in
         [yY][eE][sS]|[yY])
-            docker save -o limo_dev_backup.tar limo_dev:backup
+            docker save -o gnm_dev_backup.tar gnm_dev:backup
             ;;
 
         [nN][oO]|[nN])
@@ -100,9 +118,9 @@ function restore_image()
     read input
     case $input in
         [yY][eE][sS]|[yY])
-            docker rmi -f limo_ros2:dev
-            docker rmi -f limo_dev:backup
-            docker load < limo_dev_backup.tar
+            docker rmi -f gnm_ros:dev
+            docker rmi -f gnm_dev:backup
+            docker load < gnm_dev_backup.tar
             ;;
 
         [nN][oO]|[nN])
@@ -117,6 +135,12 @@ function restore_image()
 
 }
 
+function delete_image()
+{
+    docker rmi -f gnm_dev:backup
+    docker rmi -f gnm_ros:dev
+}
+
 PRINT_MENU
 
 # prepare
@@ -126,7 +150,11 @@ read CHOOSE
 case "${CHOOSE}" in
     1)
     BUILD_IMAGE 
-    docker rm -f limo_dev
+
+    # delete container if exist
+
+    docker stop gnm_dev || true && docker rm gnm_dev || true
+    
     start_image
     ;;
     2)
@@ -136,7 +164,7 @@ case "${CHOOSE}" in
     start_image
     ;;
     4)
-    docker rm -f limo_dev
+    docker rm -f gnm_dev
     ;;
     5)
     backup_container

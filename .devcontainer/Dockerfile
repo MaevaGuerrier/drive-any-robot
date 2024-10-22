@@ -1,12 +1,13 @@
 FROM ros:melodic
 
+ARG distro=melodic
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Builder dependencies installation
 RUN apt-get update \
     && apt-get install -qq -y --no-install-recommends \
     build-essential \
-    cmake \
     git \
     libssl-dev \
     libusb-1.0-0-dev \
@@ -21,11 +22,18 @@ RUN apt-get update \
     apt-transport-https \
     ca-certificates \
     curl \
+    wget \
     swig \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-RUN echo "source /opt/ros/kinetic/setup.bash" >> /etc/bash.bashrc
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.28.4/cmake-3.28.4-linux-x86_64.sh \
+    -O cmake.sh && \
+    chmod +x cmake.sh && \
+    ./cmake.sh --skip-license --exclude-subdir --prefix=/usr/local && \
+    rm cmake.sh
+    
+RUN echo "source /opt/ros/$distro/setup.bash" >> /etc/bash.bashrc
 
 # ENV DEBIAN_FRONTEND=noninteractive
 # RUN apt-get update \
